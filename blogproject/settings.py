@@ -25,7 +25,8 @@ SECRET_KEY = 'mz_y+z%o-5bk%-$urn+xj6v5!e)!^yzj&fs)j1@&p$@h!rzq&h'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+#ALLOWED_HOSTS = ['127.0.0.1', 'localhost ', '.duanlt.com']
 
 
 # Application definition
