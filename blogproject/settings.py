@@ -20,13 +20,19 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+
 SECRET_KEY = 'mz_y+z%o-5bk%-$urn+xj6v5!e)!^yzj&fs)j1@&p$@h!rzq&h'
+
+#SECRET_KEY = 'tsg@lvfy752ly3b^g#83+d^#=x4110+fyb+%8xvb5!==ugw2&e'
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+
 ALLOWED_HOSTS = ['*']
 #ALLOWED_HOSTS = ['127.0.0.1', 'localhost ', '.duanlt.com']
+
 
 
 # Application definition
@@ -38,6 +44,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'blog.apps.BlogConfig',  # 注册 blog 应用中的'blog.apps.BlogConfig'类
+    # 'blog', #注册blog应用
+    'comments.apps.CommentsConfig',  # 注册 comments 应用
+
 ]
 
 MIDDLEWARE = [
@@ -55,7 +66,11 @@ ROOT_URLCONF = 'blogproject.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+
+        # 'DIRS': [],
+        # 这里 BASE_DIR 是 settings.py 在配置开头前面定义的变量，记录的是工程根目录 HelloDjango-blog-tutorial 的值。
+        # 在这个目录下有模板文件所在的目录 templates\，于是利用os.path.join 把这两个路径连起来，构成完整的模板路径，django 就知道去这个路径下面找我们的模板了。
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -119,3 +134,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# 加入下面的配置
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+

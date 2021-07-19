@@ -16,6 +16,15 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from django.contrib import admin
+from django.urls import path, include
+
+"""
+django 匹配 URL 模式是在 blogproject 目录（即 settings.py 文件所在的目录）的 urls.py 下的，
+所以我们要把 blog 应用下的 urls.py 文件包含到 blogproject\ urls.py 里去，
+"""
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include('blog.urls')),
+    path('', include('comments.urls')),
 ]
