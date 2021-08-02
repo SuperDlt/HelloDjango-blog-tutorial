@@ -3,8 +3,9 @@
   <ul>
     {% for tag in tag_list %}
         <li>
-            <a href="{% url 'blog:tag' tag.pk %}">{{ tag.name }}</a>
-         </li>
+{#            <a href="{% url 'blog:tag' tag.pk %}">{{ tag.name }}</a>#}
+            <a href="{% url 'blog:tag' tag.pk %}">{{ tag.name }} <span class="post-count">({{ tag.num_posts }})</span> </a>
+        </li>
     {% empty %}
       暂无标签！
     {% endfor %}

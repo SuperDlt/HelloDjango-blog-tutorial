@@ -1,3 +1,5 @@
+import re
+
 from django.db import models
 
 # Create your models here.
@@ -7,7 +9,10 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.urls import reverse
 import markdown
+from django.utils.functional import cached_property
 from django.utils.html import strip_tags
+from markdown.extensions.toc import TocExtension
+from django.utils.text import slugify
 
 class Category(models.Model):
     """
@@ -50,6 +55,32 @@ class Post(models.Model):
     """
     文章的数据库表稍微复杂一点，主要是涉及的字段更多。
     """
+
+    # 首先看到 rich_content 这个方法，它返回的是 generate_rich_content 函数调用后的结果，即将 body 属性的值经 Markdown 解析后的内容。
+    # 但要注意的是我们使用了 django 提供的 cached_property 装饰器，这个装饰器和 Python 内置的 property 装饰器功能一样，可以将方法转为属性，
+    # 这样就能够以属性访问的方式获取方法返回的值，不过 cached_property 进一步提供缓存功能，它将被装饰方法调用返回的值缓存起来，
+    # 下次访问时将直接读取缓存内容，而不需重复执行方法获取返回结果。例如对博客文章内容的 Markdown 解析是比较耗时的，而解析的结果可能被多次访问，
+    # 因此将其缓存起来能起到优化作用。
+    #
+    # 为了更方便地获取文章的 HTML 格式的内容和目录，我们进一步将 generate_rich_content 返回的值放到 toc 和 body_html 两个属性中，
+    # 这里两个属性都从 rich_content 中取值，cached_property 的作用就发挥出来了。
+    @property
+    def toc(self):
+        return self.rich_content.get("toc", "")
+
+    @property
+    def body_html(self):
+        return self.rich_content.get("content", "")
+
+    @cached_property
+    def rich_content(self):
+        return generate_rich_content(self.body)
+
+    # 新增 views 字段记录阅读量,注意 views 字段的类型为 PositiveIntegerField，该类型的值只允许为正整数或 0，因为阅读量不可能为负值。
+    # 初始化时 views 的值为 0。将 editable 参数设为 False 将不允许通过 django admin 后台编辑此字段的内容。
+    # 因为阅读量应该根据被访问次数统计，而不应该人为修改。
+    views = models.PositiveIntegerField(default=0, editable=False)
+
     # body 是我们存储 Markdown 文本的字段：
     body = models.TextField()
 
@@ -130,3 +161,27 @@ class Post(models.Model):
     # 那么 get_absolute_url 函数返回的就是 /posts/255/ ，这样 Post 自己就生成了自己的 URL。
     def get_absolute_url(self):
         return reverse('blog:detail', kwargs={'pk': self.pk})
+
+    """
+    一旦用户访问了某篇文章，这时就应该将 views 的值 +1，
+    increase_views 方法首先将自身对应的 views 字段的值 +1（此时数据库中的值还没变），
+    然后调用 save 方法将更改后的值保存到数据库。注意这里使用了 update_fields 参数来告诉 Django 只更新数据库中 views 字段的值，以提高效率。
+    
+    """
+    def increase_views(self):
+        self.views += 1
+        self.save(update_fields=['views'])
+
+def generate_rich_content(value):
+    md = markdown.Markdown(
+        extensions=[
+            "markdown.extensions.extra",
+            "markdown.extensions.codehilite",
+            # 记得在顶部引入 TocExtension 和 slugify
+            TocExtension(slugify=slugify),
+        ]
+    )
+    content = md.convert(value)
+    m = re.search(r'<div class="toc">\s*<ul>(.*)</ul>\s*</div>', md.toc, re.S)
+    toc = m.group(1) if m is not None else ""
+    return {"content": content, "toc": toc}

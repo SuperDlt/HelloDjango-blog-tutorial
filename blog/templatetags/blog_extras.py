@@ -1,4 +1,5 @@
 from django import template
+from django.db.models import Count
 
 from ..models import Post, Category, Tag
 
@@ -26,6 +27,7 @@ def show_recent_posts(context, num=5):
 # 且是 Python 的 date 对象，精确到月份，降序排列。
 @register.inclusion_tag('blog/inclusions/_archives.html', takes_context=True)
 def show_archives(context):
+
     return {
         'date_list': Post.objects.dates('created_time', 'month', order='DESC'),
     }
@@ -33,13 +35,15 @@ def show_archives(context):
 # 过程还是一样，先写好函数，然后将函数注册为模板标签。注意分类模板标签函数中使用到了 Category 类，其定义在 blog.models.py 文件中，
 @register.inclusion_tag('blog/inclusions/_categories.html', takes_context=True)
 def show_categories(context):
+    category_list = Category.objects.annotate(num_posts=Count('post')).filter(num_posts__gt=0)
     return {
-        'category_list': Category.objects.all(),
+        'category_list': category_list
     }
 
 # 标签和分类其实是很类似的，模板标签：
 @register.inclusion_tag('blog/inclusions/_tags.html', takes_context=True)
 def show_tags(context):
+    tag_list = Tag.objects.annotate(num_posts=Count('post')).filter(num_posts__gt=0)
     return {
-        'tag_list': Tag.objects.all(),
+        'tag_list': tag_list,
     }
